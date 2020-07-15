@@ -1,25 +1,24 @@
 import React from 'react';
-import logo from './logo.svg';
-import './App.css';
+import styled from 'styled-components';
+import Carousel from './components/carousel/carousel.component';
+import image1 from './assets/image1.jpg';
+import image2 from './assets/image2.jpg';
+import image3 from './assets/image3.jpg';
+import image4 from './assets/image4.jpg';
+
+const AppContainer = styled.div`
+display:flex;
+justify-content:center;
+align-items:center;
+height: 100%;
+`
+const images = [image1, image2, image3, image4]
 
 function App() {
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <AppContainer>
+      <Carousel images={images} width={780} height={480} delay={300} parts={3}/>
+    </AppContainer>
   );
 }
 
