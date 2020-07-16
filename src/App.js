@@ -17,7 +17,7 @@ const images = [image1, image2, image3, image4]
 function App() {
   return (
     <AppContainer>
-      <Carousel images={images} width={780} height={480} delay={300} parts={3}/>
+      <Carousel images={images} width={900} height={600} delay={10} parts={100} autoplayIncrement= {10000}/>
     </AppContainer>
   );
 }

@@ -1,6 +1,14 @@
 import React from 'react';
 import styled from 'styled-components';
+import _ from 'lodash';
+import shadow from '../../assets/shadow.png'
 
+const Container = styled.div`
+display:flex;
+flex-direction:column;
+justify-content:center;
+align-items:center;
+`
 
 const CarouselContainer = styled.div`
 width:${props => props.width}px;
@@ -26,7 +34,7 @@ background-color: red;
 transform:  ${props => `rotateY(${props.angle}deg)`} ${props => `translateZ(${props.z}px)`} ; 
 transition-duration: 1s;
 background-image: url(${props => props.image});
-background-size: 100% ${props => props.height*3}px;
+background-size: 100% ${props => props.height*props.parts}px;
 background-repeat: no-repeat;
 background-position-y: ${props => props.bgPosition};
 `
@@ -45,6 +53,16 @@ position: absolute;
 ${props => props.left? 'left:0' : 'right:0'}
 `
 
+const Shadow = styled.div`
+width:${props => props.width}px;
+height:auto;
+position: relative;
+bottom: ${props => props.width/8}px;
+z-index: -1;
+transform: scale(1.05);
+`
+
+
 const angles = [0,90,180,-90]
 
 class Carousel extends React.Component {
@@ -55,9 +73,11 @@ class Carousel extends React.Component {
     }
 
     componentDidMount() {
-        // setInterval(() => {
-        //     this.handleRight()
-        // }, 5000);
+        if (this.props.autoplay) {
+            setInterval(() => {
+                this.handleRight()
+            }, this.props.autoplayInterval);
+        }
     }
 
     handleMouseMove =  event => {
@@ -76,9 +96,12 @@ class Carousel extends React.Component {
         this.setState({deg: this.state.deg+90})
 
     }
+    handleLeftDebounce = _.debounce(this.handleLeft, (1000+this.props.delay*(this.props.parts-1)), {leading: true})
     handleRight = () => {
         this.setState({deg: this.state.deg-90})
+        
     } 
+    handleRightDebounce = _.debounce(this.handleRight, (1000+this.props.delay*(this.props.parts-1)), {leading: true})
 
     handleMouseDown = event => {
         event.preventDefault()
@@ -116,42 +139,55 @@ class Carousel extends React.Component {
     
 
     render() {
-        const {deg,x} = this.state
+        const {deg} = this.state
         const {images, width, height, parts, delay} = this.props
         return (
-            <CarouselContainer width={width} height={height} >
-                {
-                    [...Array(parts)].map((part, i) => {
-                        return (
-                            <CarouselImageContainer 
-                            className='carousel-image-container' 
-                            style={{transform: `translateZ(-${width/2}px) rotateY(${deg}deg)`, transitionDelay: `${delay*i}ms` }}  
-                            onMouseDown={this.handleMouseDown} 
-                            onMouseUp={this.handleMouseUp} 
-                            onMouseLeave={this.handleMouseLeave} 
-                            angle={deg}
-                            height={height/3}
-                            zIndex={i===1? 1: 0}
-                            >
-                            {
-                                images.map((image, index) => {
-                                    return (
-                                        <Image z={width/2} angle={angles[index]} width={width} height={height/3} image={image} bgPosition={`-${height/3*i}px`}>
-                                        </Image>
-                                        )
-                                    })
-                            }
-                                <FloorAndTop width={width} height={width} y ={-width/2} angle={90}></FloorAndTop>
-                                <FloorAndTop width={width} height={width} y ={-width/2+height/3} angle={-90}></FloorAndTop>
-                            </CarouselImageContainer>
-                        )
-                    })
-                }
-                <Arrow left onClick={this.handleLeft}>Left</Arrow>
-                <Arrow onClick={this.handleRight}>Right</Arrow>
-            </CarouselContainer>
+            <Container>
+                <CarouselContainer width={width} height={height} >
+                    {
+                        [...Array(parts)].map((part, i) => {
+                            return (
+                                <CarouselImageContainer 
+                                className='carousel-image-container' 
+                                style={{transform: `translateZ(-${width/2}px) rotateY(${deg}deg)`, transitionDelay: `${delay*i}ms` }}  
+                                onMouseDown={this.handleMouseDown} 
+                                onMouseUp={this.handleMouseUp} 
+                                onMouseLeave={this.handleMouseLeave} 
+                                angle={deg}
+                                height={height/parts}
+                                zIndex={i>=(parts-1)/2?parts-i:0}
+                                >
+                                {
+                                    images.map((image, index) => {
+                                        return (
+                                            <Image z={width/2} angle={angles[index]} width={width} height={height/parts} image={image} bgPosition={`-${height/parts*i}px`} parts={parts}>
+                                            </Image>
+                                            )
+                                        })
+                                }
+                                    <FloorAndTop width={width} height={width} y ={-width/2} angle={90}></FloorAndTop>
+                                    <FloorAndTop width={width} height={width} y ={-width/2+height/parts} angle={-90}></FloorAndTop>
+                                </CarouselImageContainer>
+
+                            )
+                        })
+                    }
+                    <Arrow left onClick={this.handleLeftDebounce}>Left</Arrow>
+                    <Arrow onClick={this.handleRightDebounce}>Right</Arrow>
+                </CarouselContainer>
+                <Shadow width={width} >
+                    <img alt='shadow' width={width} src={shadow}/>
+                </Shadow>
+            </Container>
         )
     }
+}
+
+Carousel.defaultProps = {
+    autoplayInterval: 5000,
+    autoplay: false,
+    delay: 300,
+    parts: 1
 }
 
 
