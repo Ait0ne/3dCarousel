@@ -22,7 +22,7 @@ position:relative;
 transform-style:preserve-3d;
 width:100%;
 height:${props => props.height}px;
-transition-duration: 1s;
+transition-duration: ${props => props.transition}ms;
 z-index: ${props => props.zIndex};
 `
 const Image = styled.div`
@@ -63,16 +63,20 @@ transform: scale(1.05);
 `
 
 
-const angles = [0,90,180,-90]
+const angles = [-90,0,90,180]
 
 class Carousel extends React.Component {
     state = {
         deg: 0,
         x: null,
-
+        currentImageIndex:1,
+        currentImages: [],
+        start:0,
+        end:3
     }
 
     componentDidMount() {
+        this.setState({currentImages:this.props.images.slice(0,4)})
         if (this.props.autoplay) {
             setInterval(() => {
                 this.handleRight()
@@ -93,15 +97,32 @@ class Carousel extends React.Component {
 
 
     handleLeft = () => {
-        this.setState({deg: this.state.deg+90})
+        const {currentImageIndex, currentImages, start, end} = this.state
+        const {images} = this.props
+        const newImages = currentImages
+        const newEnd = end===images.length-1?0: end+1
+        const newStart = start===images.length-1?0: start+1
+        const newCurrentImageIndex = currentImageIndex===3?0:currentImageIndex+1
+        newImages[currentImageIndex===0?3: currentImageIndex-1] = images[newEnd]
+        this.setState({currentImages:newImages, currentImageIndex: newCurrentImageIndex, start:newStart, end: newEnd, deg: this.state.deg-90})
+        
+        
 
     }
-    handleLeftDebounce = _.debounce(this.handleLeft, (1000+this.props.delay*(this.props.parts-1)), {leading: true})
+    handleLeftDebounce = _.debounce(this.handleLeft, (this.props.transition+this.props.delay*(this.props.parts-1)), {leading: true})
     handleRight = () => {
-        this.setState({deg: this.state.deg-90})
+        const {currentImageIndex, currentImages, start, end} = this.state
+        const {images} = this.props
+        const newImages = currentImages
+        const newEnd = end===0?images.length-1: end-1
+        const newStart = start===0?images.length-1: start-1
+        newImages[(currentImageIndex+2)%4] = images[newStart]
+        const newCurrentImageIndex = currentImageIndex===0?3:currentImageIndex-1
+        this.setState({currentImages:newImages, currentImageIndex: newCurrentImageIndex, start:newStart, end: newEnd, deg: this.state.deg+90})
+
         
     } 
-    handleRightDebounce = _.debounce(this.handleRight, (1000+this.props.delay*(this.props.parts-1)), {leading: true})
+    handleRightDebounce = _.debounce(this.handleRight, (this.props.transition+this.props.delay*(this.props.parts-1)), {leading: true})
 
     handleMouseDown = event => {
         event.preventDefault()
@@ -135,32 +156,34 @@ class Carousel extends React.Component {
     }
 
     CarouselImages = []
-
     
 
     render() {
-        const {deg} = this.state
-        const {images, width, height, parts, delay} = this.props
+        const {deg, currentImages} = this.state
+        const {width, height, parts, delay, transition} = this.props
         return (
             <Container>
+                {console.log(this.props)}
                 <CarouselContainer width={width} height={height} >
                     {
                         [...Array(parts)].map((part, i) => {
                             return (
                                 <CarouselImageContainer 
+                                key={i}
                                 className='carousel-image-container' 
                                 style={{transform: `translateZ(-${width/2}px) rotateY(${deg}deg)`, transitionDelay: `${delay*i}ms` }}  
                                 onMouseDown={this.handleMouseDown} 
                                 onMouseUp={this.handleMouseUp} 
-                                onMouseLeave={this.handleMouseLeave} 
+                                // onMouseLeave={this.handleMouseLeave} 
                                 angle={deg}
                                 height={height/parts}
                                 zIndex={i>=(parts-1)/2?parts-i:0}
+                                transition={transition}
                                 >
                                 {
-                                    images.map((image, index) => {
+                                    currentImages.map((image, index) => {
                                         return (
-                                            <Image z={width/2} angle={angles[index]} width={width} height={height/parts} image={image} bgPosition={`-${height/parts*i}px`} parts={parts}>
+                                            <Image key={index} z={width/2} angle={angles[index]} width={width} height={height/parts} image={image} bgPosition={`-${height/parts*i}px`} parts={parts}>
                                             </Image>
                                             )
                                         })
@@ -187,7 +210,8 @@ Carousel.defaultProps = {
     autoplayInterval: 5000,
     autoplay: false,
     delay: 300,
-    parts: 1
+    parts: 1,
+    transition: 1000
 }
 
 
